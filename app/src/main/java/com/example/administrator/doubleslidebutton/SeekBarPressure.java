@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 
 
 
+
 public class SeekBarPressure extends View {
     private static final String TAG = "SeekBarPressure";  
     private static final int CLICK_ON_LOW = 1;      //点击在前滑块上  

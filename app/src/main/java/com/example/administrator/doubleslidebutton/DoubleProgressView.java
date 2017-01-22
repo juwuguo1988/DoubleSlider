@@ -15,9 +15,6 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by Herve on 2016/4/10.
- */
 public class DoubleProgressView extends RelativeLayout {
 
     private String TAG = getClass().getSimpleName();
@@ -28,27 +25,26 @@ public class DoubleProgressView extends RelativeLayout {
     private LinearLayout ll_video_crop_middle;
     private ImageView iv_crop_one_l_button;
     private ImageView iv_crop_one_r_button;
-
-    /*变量清单*/
+    /* 变量清单 */
     private Context mContext;
-    //是否是单滑块
+    // 是否是单滑块
     private boolean isSingleButton = false;
 
     private List<Integer> imageList;
     private int dmw, dmh;
 
-    /*滑块*/
+	/* 滑块 */
 
-    private boolean isFirstOnTouch = true;//防止第一次点击的时候误滑动
+    private boolean isFirstOnTouch = true;// 防止第一次点击的时候误滑动
 
-    //滑块的宽度，总控件的宽度
+    // 滑块的宽度，总控件的宽度
     private double measuredWidth = 50;
-    private double totalWidth = 1000;
-    //最长的宽度，最小的宽度
+    private double totalWidth = -1;
+    // 最长的宽度，最小的宽度
     private double minWidth = 62;
     private double maxWidth = 100;
 
-    //最长的时间，最小的时间
+    // 最长的时间，最小的时间
     private double minCurrent = 62;
     private double maxCurrent = 100;
 
@@ -57,15 +53,15 @@ public class DoubleProgressView extends RelativeLayout {
     private ProgressListener progressListener;
     private InitData initData;
 
-    private double finalLeftTime = -1;//最后输出给外部的开始时间
-    private double finalRightTime = -1;//最后输出给外部的结束时间
+    private double finalLeftTime = -1;// 最后输出给外部的开始时间
+    private double finalRightTime = -1;// 最后输出给外部的结束时间
 
-    //计算滑动距离
+    // 计算滑动距离
     private int lastX = 0;
     private int lastY = 0;
 
-    /*判断类型数值*/
-    private int witchView = 0;//判断当前点击的是哪一个滑块
+    /* 判断类型数值 */
+    private int witchView = 0;// 判断当前点击的是哪一个滑块
     public static final int LEFT_ON_TOUCH = 0;
     public static final int RIGHT_ON_TOUCH = 1;
 
@@ -73,7 +69,7 @@ public class DoubleProgressView extends RelativeLayout {
     private final int WITCH_DOUBLE_LEFT = 1;
     private final int WITCH_DOUBLE_RIGHT = 2;
 
-    /*计算滑动的时间*/
+    /* 计算滑动的时间 */
     private int actionType = -1;
 
     private final int ACTIONTYPE_LEFT_PULL = 0;
@@ -82,7 +78,10 @@ public class DoubleProgressView extends RelativeLayout {
     private final int ACTIONTYPE_RIGHT_PUSH = 3;
     private final int ACTIONTYPE_RIGHT_NO_CHANGE = 4;
     private final int ACTIONTYPE_LEFT_NO_CHANGE = 5;
-    /*清单*/
+
+    private final int ACTIONTYPE_LEFT_START = 6;
+    private final int ACTIONTYPE_RIGHT_END = 7;
+    private final int ACTIONTYPE_SINGLE_NOMAL = 8;
 
     public DoubleProgressView(Context context) {
         super(context);
@@ -120,15 +119,13 @@ public class DoubleProgressView extends RelativeLayout {
 
         addView(root);
 
-        initUI();
         setListener();
 
-        initData(25, 52, 100, 10, 40);
-//        initDataForSingle(25, 100, 40);
+        //initDataForSingle(25, 100, 40);
 
     }
 
-    private void initUI() {
+    private void initUI(int resultWidth, int resultHeight) {
         imageList = new ArrayList<Integer>();
 
         imageList.add(R.drawable.crop_leftfreepull_icon_selected);
@@ -136,22 +133,30 @@ public class DoubleProgressView extends RelativeLayout {
 
         imageList.add(R.drawable.crop_leftpull_icon);
         imageList.add(R.drawable.crop_rightfreepull_icon_selected);
-//        imageList.add(R.drawable.crop_one_rightpull_icon);
-//        imageList.add(R.drawable.crop_one_rightpull_icon);
 
-        rl_photo_edit_tool_bar.setLayoutParams(UI.getRelativeLayoutPararmWH(dmw, dmh, UI.ORG_SCREEN_WIDTH, 140));
+        LayoutParams layoutParams = (LayoutParams) rl_photo_edit_tool_bar.getLayoutParams();
+        layoutParams.width = resultWidth;
+        layoutParams.height = resultHeight;
+        rl_photo_edit_tool_bar.setLayoutParams(layoutParams);
 
-        double oneCropVideoFrameHeight = dmw * 100 / UI.ORG_SCREEN_WIDTH;
+        double oneCropVideoFrameHeight = dmw * 50 / UI.ORG_SCREEN_WIDTH;
 
-        ll_crop_one_l_button.setLayoutParams(UI.getLinearLayoutPararmWHTrue((int) (oneCropVideoFrameHeight * 0.2), (int) oneCropVideoFrameHeight));
-        ll_crop_one_r_button.setLayoutParams(UI.getLinearLayoutPararmWHTrue((int) (oneCropVideoFrameHeight * 0.2), (int) oneCropVideoFrameHeight));
+        ll_crop_one_l_button.setLayoutParams(UI.getLinearLayoutPararmWHTrue((int) (oneCropVideoFrameHeight * 0.4), (int) oneCropVideoFrameHeight));
+        ll_crop_one_r_button.setLayoutParams(UI.getLinearLayoutPararmWHTrue((int) (oneCropVideoFrameHeight * 0.4), (int) oneCropVideoFrameHeight));
+        iv_crop_one_l_button.setLayoutParams(UI.getLinearLayoutPararmWHTrue((int) (oneCropVideoFrameHeight * 0.4), (int) oneCropVideoFrameHeight));
+        iv_crop_one_r_button.setLayoutParams(UI.getLinearLayoutPararmWHTrue((int) (oneCropVideoFrameHeight * 0.4), (int) oneCropVideoFrameHeight));
 
         iv_crop_one_l_button.setImageResource(imageList.get(0));
         iv_crop_one_r_button.setImageResource(imageList.get(1));
+
+        initData(25, 52, 100, 10, 40);
+
     }
 
     //初始化双滑块Button的属性，布局 和 图片类型  //图片按照 左边点击状态 ，右边正常状态 ，左边正常状态 ，右边点击状态 依次排好 OR  单滑块的时候 传入两个 左边正常 ，右边正常状态
     public InitData initView(LayoutParams toolBarParams, LinearLayout.LayoutParams leftParams, LinearLayout.LayoutParams rightParams, List<Integer> buttonImageResource) {
+
+
 
         rl_photo_edit_tool_bar.setLayoutParams(toolBarParams);
 
@@ -176,24 +181,6 @@ public class DoubleProgressView extends RelativeLayout {
 
     private void setListener() {
 
-        initData = new InitData() {
-            @Override //初始化单滑块数据
-            public boolean initData(double startCurrent, double endCurrent, double totalCurrent, double minCurrent, double maxCurrent) {
-
-                boolean result = DoubleProgressView.this.initData(startCurrent, endCurrent, totalCurrent, minCurrent, maxCurrent);
-
-                return result;
-
-            }
-
-            @Override  //初始化单滑块数据
-            public boolean initDataForSingle(double startCurrent, double totalCurrent, double unChangeCurrent) {
-
-                boolean result = DoubleProgressView.this.initDataForSingle(startCurrent, totalCurrent, unChangeCurrent);
-
-                return result;
-            }
-        };
         /*
          * 左滑块
 		 */
@@ -201,6 +188,8 @@ public class DoubleProgressView extends RelativeLayout {
         ll_crop_one_l_button.setOnTouchListener(new OnTouchListener() {
 
             public boolean onTouch(View v, MotionEvent event) {
+                getParent().requestDisallowInterceptTouchEvent(true);
+
                 if (!isSingleButton) {
                     iv_crop_one_l_button.setImageResource(imageList.get(0));
                     iv_crop_one_r_button.setImageResource(imageList.get(1));
@@ -222,6 +211,7 @@ public class DoubleProgressView extends RelativeLayout {
         ll_crop_one_r_button.setOnTouchListener(new OnTouchListener() {
 
             public boolean onTouch(View v, MotionEvent event) {
+                getParent().requestDisallowInterceptTouchEvent(true);
 
                 if (!isSingleButton) {
                     iv_crop_one_l_button.setImageResource(imageList.get(2));
@@ -245,12 +235,9 @@ public class DoubleProgressView extends RelativeLayout {
         ll_video_crop_middle.setOnTouchListener(new OnTouchListener() {
 
             public boolean onTouch(View v, MotionEvent event) {
+                getParent().requestDisallowInterceptTouchEvent(true);
 
-                if (isSingleButton) {
-
-                    return moveAction(event, WITCH_SINGLE);
-                }
-                return false;
+                return moveAction(event, WITCH_SINGLE);
 
             }
 
@@ -287,7 +274,7 @@ public class DoubleProgressView extends RelativeLayout {
                 switch (witch) {
                     case WITCH_SINGLE:
 
-                        view = ll_crop_one_l_button;
+                        view = ll_video_crop_middle;
 
                         break;
                     case WITCH_DOUBLE_LEFT:
@@ -299,7 +286,6 @@ public class DoubleProgressView extends RelativeLayout {
                         break;
 
                 }
-                Log.e(TAG, "moveAction:滑动offsetX=" + offsetX);
 
                 if (isFirstOnTouch) {
                     if (Math.abs(offsetX) > 2) {//第一点点击要偏移量大于2才允许移动
@@ -328,7 +314,6 @@ public class DoubleProgressView extends RelativeLayout {
 
 
 
-
         /*左边滑块的布局信息*/
         LinearLayout.LayoutParams leftLayoutParams = (LinearLayout.LayoutParams) ll_crop_one_l_button.getLayoutParams();
 
@@ -336,7 +321,30 @@ public class DoubleProgressView extends RelativeLayout {
         LinearLayout.LayoutParams rightlayoutParams = (LinearLayout.LayoutParams) ll_crop_one_r_button.getLayoutParams();
         double totalmeasuredWidth = totalWidth - 2 * measuredWidth;
 
-        if (view == ll_crop_one_l_button) {
+        if (view == ll_video_crop_middle) {
+
+            if (leftLayoutParams.leftMargin + offsetX <= 0) {
+                actionType = ACTIONTYPE_LEFT_START;
+
+                rightlayoutParams.rightMargin = rightlayoutParams.rightMargin + leftLayoutParams.leftMargin;
+                leftLayoutParams.leftMargin = 0;
+            } else if (rightlayoutParams.rightMargin - offsetX <= 0) {
+                actionType = ACTIONTYPE_RIGHT_END;
+
+                leftLayoutParams.leftMargin = leftLayoutParams.leftMargin + rightlayoutParams.rightMargin;
+                rightlayoutParams.rightMargin = 0;
+
+            } else {//正常
+
+                actionType = ACTIONTYPE_SINGLE_NOMAL;
+
+                leftLayoutParams.leftMargin = leftLayoutParams.leftMargin + offsetX;
+
+                rightlayoutParams.rightMargin = rightlayoutParams.rightMargin - offsetX;
+
+            }
+
+        } else if (view == ll_crop_one_l_button) {
 
             /*左边的最大距离*/
             double minLeftmargin = totalmeasuredWidth - rightlayoutParams.rightMargin - minWidth;
@@ -393,6 +401,7 @@ public class DoubleProgressView extends RelativeLayout {
             }
             //右边滑块
         } else if (view == ll_crop_one_r_button) {
+
             double minRightmargin = totalmeasuredWidth - leftLayoutParams.leftMargin - minWidth;
 
             double maxRightmargin = totalmeasuredWidth - leftLayoutParams.leftMargin - maxWidth;
@@ -467,6 +476,8 @@ public class DoubleProgressView extends RelativeLayout {
 
         if (progressListener != null) {
             if (isChangeView) {
+                double tempTime = finalRightTime - finalLeftTime;
+
                 switch (actionType) {
                     case ACTIONTYPE_LEFT_PULL:
                         finalLeftTime = formatTimeForDouble(leftxx);
@@ -518,6 +529,28 @@ public class DoubleProgressView extends RelativeLayout {
                         finalLeftTime = formatTimeForDouble(leftxx);
 
                         break;
+
+                    case ACTIONTYPE_SINGLE_NOMAL:
+
+                        finalLeftTime = formatTimeForDouble(leftxx);
+                        finalRightTime = finalLeftTime + tempTime;
+
+                        break;
+
+                    case ACTIONTYPE_LEFT_START:
+
+                        finalLeftTime = 0;
+
+                        finalRightTime = finalLeftTime + tempTime;
+
+                        break;
+
+                    case ACTIONTYPE_RIGHT_END:
+                        finalRightTime = totalCurrent;
+
+                        finalLeftTime = totalCurrent - tempTime;
+
+                        break;
                 }
                 actionType = -1;
 
@@ -541,8 +574,58 @@ public class DoubleProgressView extends RelativeLayout {
         return true;
     }
 
-    private boolean initData(double startCurrent, double endCurrent, double totalCurrent, double minCurrent, double maxCurrent) {
-        Log.e(TAG, "initView: 设置布局数据B");
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        if (totalWidth != -1) {
+            return;
+        }
+
+        // 声明一个临时变量来存储计算出的测量值
+        int resultWidth = 0;
+        // 获取宽度测量规格中的mode
+        int modeWidth = MeasureSpec.getMode(widthMeasureSpec);
+        // 获取宽度测量规格中的size
+        int sizeWidth = MeasureSpec.getSize(widthMeasureSpec);
+
+        /*高度*/
+        int resultHeight = 0;
+        int modeHeight = MeasureSpec.getMode(heightMeasureSpec);
+        int sizeHeight = MeasureSpec.getSize(heightMeasureSpec);
+
+        //如果父布局有布局信息
+
+        if (modeWidth == MeasureSpec.EXACTLY) {
+            resultWidth = sizeWidth;
+            resultHeight = sizeHeight;
+
+        } else {  // 如果父布局没有布局信息
+
+            resultWidth = getWidth();
+            resultHeight = getHeight();
+            //如果爹给儿子的是一个限制值
+
+            if (modeWidth == MeasureSpec.AT_MOST) {
+                // 那么儿子自己的需求就要跟爹的限制比比看谁小要谁
+                resultWidth = Math.min(resultWidth, sizeWidth);
+            }
+            if (modeHeight == MeasureSpec.AT_MOST) {
+                resultHeight = Math.min(resultHeight, sizeHeight);
+            }
+        }
+
+        // 设置测量尺寸
+        setMeasuredDimension(resultWidth, resultHeight);
+
+        initUI(resultWidth, resultHeight);
+
+    }
+
+
+
+    public boolean initData(double startCurrent, double endCurrent, double totalCurrent, double minCurrent, double maxCurrent) {
+        Log.e(TAG, "initData: 设置布局数据B");
 
         formatTimeForDouble(startCurrent);
         formatTimeForDouble(endCurrent);
@@ -589,6 +672,8 @@ public class DoubleProgressView extends RelativeLayout {
         rightlayoutParams.rightMargin = (int) (totalWidth - 2 * measuredWidth - endCurrent * scale);
 
         ll_crop_one_r_button.setLayoutParams(rightlayoutParams);
+
+        formatTimeForProgressChanged(finalLeftTime, finalRightTime);
 
         return true;
 
@@ -682,7 +767,6 @@ public class DoubleProgressView extends RelativeLayout {
 
     public void setProgressListener(ProgressListener progressListener) {
         this.progressListener = progressListener;
-        formatTimeForProgressChanged(finalLeftTime, finalRightTime);
 
     }
 
@@ -730,7 +814,7 @@ public class DoubleProgressView extends RelativeLayout {
         boolean initDataForSingle(double startCurrent, double totalCurrent, double unChangeCurrent);
     }
 
-    interface ProgressListener {
+    public interface ProgressListener {
         //滑动前
         void onProgressBefore();
 
